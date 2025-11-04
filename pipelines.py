@@ -265,7 +265,6 @@ class OurPipeline(BasePipeline):
     TODO: implement your own pipeline by extending BasePipeline
     1. You can override any method in BasePipeline to customize the pipeline
     2. If you would like to use a router-based pipeline, you need to implement the _router function and train your own router, You can not use the task type to route the pipeline as shown in the RouterPipeline
-    
     """
     def __init__(self, model_name: str):
         super().__init__(model_name)

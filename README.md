@@ -100,9 +100,9 @@ Open `pipelines.py` and implement your strategy in `OurPipeline`.
 ### Where to customize
 Feel free to modify the class anywhere, just make sure the inputs and outputs of the pipeline remain compatible with the rest of the codebase. Examples of common customization points:
 - **Prompt construction**: override `ProcessLogic.preprocess` (or use the provided `FactualQAProcessor`, `ReasoningProcessor`, `InstructionFollowingProcessor`). 
-- **Post-processing**: override `ProcessLogic.postprocess` to clean model outputs into the desired form (e.g., first line only for TriviaQA, choice letter extraction for ARC-C).
+- **Post-processing**: override `ProcessLogic.postprocess` to clean model outputs into the desired form.
 - **Routing (optional)**: if you adopt a router strategy, you must train/learn a router. The example `RouterPipeline._router` uses `task_type` only for illustration and must not be used as-is for a real router.
-- **Decoding parameters**: adjust `max_new_tokens`, sampling, temperature, etc. via CLI or by overriding `_generate`.
+- **Decoding parameters**: adjust `max_new_tokens`, sampling, temperature, etc. via CLI or by overriding `run`.
 
 
 ## Reproducible multi-run submission
