@@ -204,7 +204,7 @@ def main():
         # Heuristic: pick a primary metric to display prominently
         primary_keys = [
             "acc",  # arc-c
-            "avg_f1",  # triviaqa
+            "avg_em_relax",  # triviaqa
             "eval_results_loose.instruction_accuracy",  # possible ifeval summary
         ]
         primary = None
