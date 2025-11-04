@@ -31,9 +31,6 @@ You will train your own model, implement your own inference pipeline and submit 
 
 ### Create environment and install dependencies
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-
 # Install top-level package and dependencies (transformers, torch, datasets, tqdm)
 pip install -e .
 
