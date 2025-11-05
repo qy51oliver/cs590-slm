@@ -7,4 +7,5 @@ dependencies = [
     "torch>=2.8.0",
     "tqdm>=4.67.1",
     "transformers>=4.55.4",
+    "accelerate>=1.10.0",
 ]
