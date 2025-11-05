@@ -103,6 +103,9 @@ Feel free to modify the class anywhere, just make sure the inputs and outputs of
 
 
 ## Reproducible multi-run submission
+After you have your model and pipeline ready, you can create your submission to upload to Gradescope to get part of the project grade.
+You will need to run five seeds per task to obtain averaged metrics. Additionally, to save computation, we limit the data size to 1000 examples per task.
+
 Use `submit.py` to generate the three required JSONLs (one per task), aggregate metrics across seeds, and build `submissions.zip`.
 ```bash
 python submit.py \
