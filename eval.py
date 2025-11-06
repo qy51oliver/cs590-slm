@@ -43,7 +43,7 @@ def main():
 
     pipeline = RouterPipeline(args.model)
 
-    args.temperature = 0.2
+    # args.temperature = 0.2
 
     # Route by task_type values produced by downloader: triviaqa, arc-c, ifeval
     rows = generate_rows(

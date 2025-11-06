@@ -9,16 +9,17 @@ This repository contains the starter code and tooling to evaluate a small langua
 You will train your own model, implement your own inference pipeline and submit predictions to the Gradescope autograder.
 
 ### What you will build
-- A custom pipeline in `OurPipeline` that handle prompt formatting, batching and optional routing.
 - A model fine-tuned based on Gemma-3-270m 
 - A submission archive (`submissions.zip`) with predictions for the three tasks.
+- [Optional] A custom pipeline in `OurPipeline` that handle prompt formatting, batching and optional routing.
+> The provided pipeline is just an example, you don’t need to follow this class exactly. You’re free to implement it in any way that feels most natural to you, as long as your code takes in questions and produces predictions in the same format as shown in our examples.
 
 
 ## Repository structure
 - `pipelines.py`: model loading, prompt formatting, batching, and routing.
   - `BasePipeline`: base inference which handle different tasks with shared logic.
   - `RouterPipeline`: example router that handle different tasks with different logic. (Illustrative only; you must implement your own router if you choose this approach instead of using task_type.)
-  - `OurPipeline`: where you implement your strategy. This is the primary TODO.
+  - `OurPipeline`: where you implement your strategy. This is the primary TODO. You don't need to follow the structure exactly; feel free to implement your own design. Just make sure it takes in questions and produces text outputs. 
 - `generate.py`: reads a JSONL of inputs and produces predictions JSONL.
 - `score.py`: computes task-specific scores (TriviaQA F1/EM, ARC-C accuracy, IFEval via the local `ifeval` package).
 - `eval.py`: one-shot pipeline: generate → score for a single task/dataset.
