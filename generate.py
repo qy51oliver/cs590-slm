@@ -55,6 +55,8 @@ def generate_rows(
         if rid is not None:
             row["id"] = rid
         rows.append(row)
+        
+    assert len(rows) == len(items), f"Preds {len(preds)} != items {len(items)}"
     return rows
 
 

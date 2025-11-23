@@ -127,8 +127,13 @@ class ReasoningProcessor(ProcessLogic):
         prompts: List[str] = []
         for it in items:
             question = it.get("question", "")
-            content =  "Please reason and choose the correct answer for the following question:\n"
-            content += question.strip()
+            content = (
+                "You will be given a multiple-choice question with options A–D.\n"
+                "Please reason and choose the correct answer **strictly as a single capital letter** (A, B, C, D). for the following question:\n"
+                f"{question.strip()}\n\nAnswer:"
+            )
+            # content =  "Please reason and choose the correct answer for the following question:\n"
+            # content += question.strip()
             prompts.append(apply_instruct_template([{ "role": "user", "content": content }], tokenizer))
         return prompts
 

@@ -26,6 +26,8 @@ NNODES=${SLURM_NNODES:-1}
 echo ">>> Running on node: $(hostname)"
 echo ">>> GPUs/node: $NGPUS | Nodes: $NNODES"
 
+export NLTK_DATA="$HOME/nltk_data" # change this to your nltk_data directory for IFEval
+
 python eval.py \
   --task arc-c \
   --model "$REPO/models/gemma270m-sft-v1" \
