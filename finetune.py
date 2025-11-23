@@ -100,7 +100,7 @@ def load_and_prepare_dataset(train_file, tokenizer, max_length):
     print(f"  Tokenization complete: {len(ds_train):,} examples")
     return ds_train
 
-def load_tok_and_model(model_name, fp16, bf16):
+def load_tok_and_model(model_name):
     print(f"Loading tokenizer and model from: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     if tokenizer.pad_token is None:
@@ -108,26 +108,13 @@ def load_tok_and_model(model_name, fp16, bf16):
         print(f"  Set pad_token to eos_token: {tokenizer.eos_token}")
     tokenizer.padding_side = "right"
 
-    dtype = None
-    if fp16:
-        dtype = torch.float16
-        print(f"  Using float16 precision")
-    elif bf16:
-        dtype = torch.bfloat16
-        print(f"  Using bfloat16 precision")
-    else:
-        print(f"  Using default precision (float32)")
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        dtype=dtype,
-        device_map=None
-    )
+    model = AutoModelForCausalLM.from_pretrained(model_name)
     print(f"  Model loaded: {model.config.model_type} with {model.num_parameters():,} parameters")
     
     if getattr(model.config, "pad_token_id", None) is None and tokenizer.pad_token_id is not None:
         model.config.pad_token_id = tokenizer.pad_token_id
 
+    model.config.use_cache = False
     return tokenizer, model
 
 def train(
@@ -147,7 +134,7 @@ def train(
     bf16: bool = False,
 ):
     set_seed(seed)
-    tok, model = load_tok_and_model(model_name, fp16=fp16, bf16=bf16)
+    tok, model = load_tok_and_model(model_name)
     ds_train = load_and_prepare_dataset(train_file, tok, max_length)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -171,6 +158,7 @@ def train(
         bf16=bf16,
         gradient_checkpointing=True,
         dataloader_num_workers=2,
+        optim="adamw_torch",
         report_to=[],
     )
 
