@@ -4,7 +4,7 @@
 #SBATCH --nodes=1 
 #SBATCH --gres=gpu:a6000:4
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=128G
 #SBATCH --time=24:00:00
 #SBATCH --output=/dev/null
@@ -24,6 +24,13 @@ exec 2>&1
 
 NGPUS=${SLURM_GPUS_ON_NODE:-$(nvidia-smi -L | wc -l | xargs)}
 NNODES=${SLURM_NNODES:-1}
+
+CORES_PER_RANK=$(( SLURM_CPUS_PER_TASK / NGPUS ))
+[ "$CORES_PER_RANK" -lt 1 ] && CORES_PER_RANK=1
+export OMP_NUM_THREADS=$CORES_PER_RANK
+export MKL_NUM_THREADS=$CORES_PER_RANK
+export OPENBLAS_NUM_THREADS=$CORES_PER_RANK
+export NUMEXPR_NUM_THREADS=$CORES_PER_RANK
 
 echo ">>> Running on node: $(hostname)"
 echo ">>> GPUs/node: $NGPUS | Nodes: $NNODES"

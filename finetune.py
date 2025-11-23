@@ -61,7 +61,7 @@ def tokenize_with_prompt_mask(tokenizer, example, max_length):
 
 def load_and_prepare_dataset(train_file, tokenizer, max_length):
     print(f"\nLoading dataset from: {train_file}")
-    raw = load_dataset("json", data_files={"all": train_file})["all"]
+    raw = load_dataset("json", data_files={"train": train_file})["train"]
     print(f"  Raw dataset size: {len(raw):,} examples")
 
     # Keep only rows we can map to (prompt, target)
@@ -106,7 +106,7 @@ def load_tok_and_model(model_name, fp16, bf16):
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        torch_dtype=dtype,
+        dtype=dtype,
         device_map=None
     )
     print(f"  Model loaded: {model.config.model_type} with {model.num_parameters():,} parameters")
