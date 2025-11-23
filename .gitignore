@@ -40,5 +40,6 @@ Thumbs.db
 scripts/
 outputs/
 data/
+models/
 submissions/
 submissions.zip

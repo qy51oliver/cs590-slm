@@ -148,6 +148,9 @@ class BasePipeline:
     def __init__(self, model_name: str):
         self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", trust_remote_code=True)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        
+        self.tokenizer.padding_side = "left"
+        
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         if getattr(self.model.config, "pad_token_id", None) is None and self.tokenizer.pad_token_id is not None:
