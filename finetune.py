@@ -114,6 +114,7 @@ def load_tok_and_model(model_name):
     if getattr(model.config, "pad_token_id", None) is None and tokenizer.pad_token_id is not None:
         model.config.pad_token_id = tokenizer.pad_token_id
 
+    # keep use_cache off only for training
     model.config.use_cache = False
     return tokenizer, model
 
@@ -139,7 +140,18 @@ def train(
 
     os.makedirs(output_dir, exist_ok=True)
     torch.backends.cuda.matmul.allow_tf32 = True
-
+    print("Hyperparameters:")
+    print(f"  Per device train batch size: {per_device_train_batch_size}")
+    print(f"  Gradient accumulation steps: {gradient_accumulation_steps}")
+    print(f"  Number of train epochs: {num_train_epochs}")
+    print(f"  Learning rate: {learning_rate}")
+    print(f"  Weight decay: {weight_decay}")
+    print(f"  Warmup ratio: {warmup_ratio}")
+    print(f"  LR scheduler type: {lr_scheduler_type}")
+    print(f"  Seed: {seed}")
+    print(f"  FP16: {fp16}")
+    print(f"  BF16: {bf16}")
+    
     args = TrainingArguments(
         output_dir=output_dir,
         per_device_train_batch_size=per_device_train_batch_size,
