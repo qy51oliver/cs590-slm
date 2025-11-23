@@ -53,10 +53,24 @@ def tokenize_with_prompt_mask(tokenizer, example, max_length):
     attn_mask = [1] * len(input_ids)
     labels = [-100] * len(prompt_ids) + target_ids # mask prompt, learn on target
 
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+    
+    if len(input_ids) < max_length:
+        pad_len = max_length - len(input_ids)
+        input_ids = input_ids + [pad_id] * pad_len
+        attn_mask = attn_mask + [0] * pad_len
+        labels = labels + [-100] * pad_len
+    else:
+        input_ids = input_ids[:max_length]
+        attn_mask = attn_mask[:max_length]
+        labels = labels[:max_length]
+        
     return {
-        "input_ids": input_ids[:max_length],
-        "attention_mask": attn_mask[:max_length],
-        "labels": labels[:max_length],
+        "input_ids": input_ids,
+        "attention_mask": attn_mask,
+        "labels": labels,
     }
 
 def load_and_prepare_dataset(train_file, tokenizer, max_length):
@@ -150,7 +164,7 @@ def train(
         lr_scheduler_type=lr_scheduler_type,
         logging_steps=50,
         save_strategy="epoch",
-        evaluation_strategy="no",  # no internal holdout; use external eval.py
+        eval_strategy="no",  # no internal holdout; use external eval.py
         save_total_limit=3,
         seed=seed,
         fp16=fp16,
@@ -164,7 +178,7 @@ def train(
         model=model,
         args=args,
         train_dataset=ds_train,
-        tokenizer=tok,
+        processing_class=tok,
         data_collator=default_data_collator,  # dynamic right padding to pad_token_id
     )
 
