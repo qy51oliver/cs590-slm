@@ -12,14 +12,11 @@ from transformers import (
 )
 
 # ============== IT-specific prompt builders ===================
+DEFAULT_SIMPLE_CHAT_TEMPLATE = """{% if bos_token %}{{ bos_token }}{% endif %}{% for message in messages %}
+{% if message['role'] == 'user' %}User: {{ message['content'] }}{% elif message['role'] == 'assistant' %}Assistant: {{ message['content'] }}{% else %}{{ message['role']|capitalize }}: {{ message['content'] }}{% endif %}
+{% endfor %}{% if add_generation_prompt %}Assistant:{% endif %}"""
 
 def _resolve_it_prompt_text(row, tokenizer):
-    """
-    Prefer chat 'messages' with tokenizer.apply_chat_template(add_generation_prompt=True).
-    Fallbacks:
-      - 'question' field (already like 'User: ...\\nAssistant:')
-      - constructed from 'instruction' / 'context'
-    """
     msgs = row.get("messages")
     if msgs and hasattr(tokenizer, "apply_chat_template"):
         return tokenizer.apply_chat_template(
@@ -28,7 +25,10 @@ def _resolve_it_prompt_text(row, tokenizer):
 
     q = row.get("question")
     if isinstance(q, str) and q.strip():
-        # Ensure it ends with the Assistant cue
+        # NEW: if it's a Dolly-style prompt, keep "### Response:" as the cue
+        if "### Response:" in q:
+            return q
+        # Otherwise, ensure a trailing Assistant cue for chat-style strings
         if not (q.endswith("Assistant:") or q.endswith("Assistant:\n")):
             q = q.rstrip() + "\nAssistant:"
         return q
@@ -40,15 +40,15 @@ def _resolve_it_prompt_text(row, tokenizer):
             return f"### Instruction:\n{instr}\n\n### Input:\n{ctx}\n\n### Response:\n"
         return f"### Instruction:\n{instr}\n\n### Response:\n"
 
-    # Last fallback: prompt field if present (string)
     p = row.get("prompt")
     if isinstance(p, str) and p.strip():
+        if "### Response:" in p:
+            return p
         if not (p.endswith("Assistant:") or p.endswith("Assistant:\n")):
             p = p.rstrip() + "\nAssistant:"
         return p
 
     return None
-
 
 def _build_it_prompt_and_target(row, tokenizer):
     """Return {'prompt': str, 'target': str} or None to skip."""
@@ -113,12 +113,15 @@ def load_tok_and_model(model_name):
         print(f"  Set pad_token to eos_token: {tokenizer.eos_token}")
     tokenizer.padding_side = "right"  # CHANGED: right padding for training
 
+    if not getattr(tokenizer, "chat_template", None):
+        tokenizer.chat_template = DEFAULT_SIMPLE_CHAT_TEMPLATE
+    
     model = AutoModelForCausalLM.from_pretrained(model_name)
     print(f"  Model loaded: {model.config.model_type} with {model.num_parameters():,} parameters")
 
     if getattr(model.config, "pad_token_id", None) is None and tokenizer.pad_token_id is not None:
         model.config.pad_token_id = tokenizer.pad_token_id
-
+    
     model.config.use_cache = False  # keep off during training
     return tokenizer, model
 
