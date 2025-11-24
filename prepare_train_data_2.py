@@ -125,6 +125,46 @@ def download_dolly_train(out_path: str) -> str:
     _write_jsonl(out_path, rows)
     return out_path
 
+def download_tulu_if_train(out_path: str) -> str:
+    ds = load_dataset("allenai/tulu-3-sft-personas-instruction-following", split="train")
+    rows: List[Dict[str, Any]] = []
+
+    for idx, ex in enumerate(ds):
+        qid = _extract_id(ex, idx, candidates=["id"])
+        prompt = str(ex.get("prompt", "") or "")
+        messages = ex.get("messages", []) or []
+        constraints = ex.get("constraints", []) or []
+
+        user_parts = []
+        assistant_resp = ""
+
+        for m in messages:
+            role = m.get("role", "")
+            content = str(m.get("content", "") or "")
+            if role == "assistant":
+                assistant_resp = content
+            else:
+                user_parts.append(f"{role}: {content}")
+
+        if user_parts:
+            conversation_prefix = "\n".join(user_parts) + "\nassistant:"
+        else:
+            conversation_prefix = f"User: {prompt}\nassistant:"
+
+        rows.append({
+            "id": qid,
+            "task_type": "tulu3_if",
+            "prompt": prompt,
+            "constraints": constraints,
+            "messages": messages,
+            "question": conversation_prefix,
+            "answers": [assistant_resp] if assistant_resp else [],
+        })
+
+    _write_jsonl(out_path, rows)
+    return out_path
+
+
 
 
 # ---------------- ARC oversampling ---------------- #
@@ -182,6 +222,7 @@ def main():
     arc_path = os.path.join(out_dir, "arc_e_c_" + "train" + ".jsonl")
     arc_aug_path = os.path.join(out_dir, "arc_e_c_aug_" + "train" + ".jsonl")
     dolly_path = os.path.join(out_dir, "dolly_train.jsonl")
+    tulu_path = os.path.join(out_dir, "tulu_train.jsonl")
     merged_path = os.path.join(out_dir, "sft_data.jsonl")
     
     print(f"Downloading TriviaQA (train) → {triviaqa_path}")
@@ -192,15 +233,18 @@ def main():
 
     print(f"Downloading Dolly15K (train) → {dolly_path}")
     download_dolly_train(dolly_path)
+
+    print(f"Downloading TULU (train) → {dolly_path}")
+    download_tulu_if_train(tulu_path)
     
     if args.arc_shuffle_reps > 1:
         print(f"Oversampling ARC-Easy+Challenge (train) → {arc_path}")
         oversample_arc_file(arc_path, arc_aug_path, args.arc_shuffle_reps)
         
     if args.arc_mode == "combined":
-        print(f"Merging TriviaQA+ARC-Easy+Challenge → {merged_path}")
+        print(f"Merging TriviaQA+ARC+Dolly+TULU-Easy+Challenge → {merged_path}")
         arc_to_merge = arc_aug_path if args.arc_shuffle_reps > 1 else arc_path
-        merged_path = _merge_and_write([triviaqa_path, arc_to_merge, dolly_path], merged_path, shuffle=True, seed=42)
+        merged_path = _merge_and_write([triviaqa_path, arc_to_merge, dolly_path, tulu_path], merged_path, shuffle=True, seed=42)
 
     print("Done.")
 
