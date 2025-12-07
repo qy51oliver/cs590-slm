@@ -182,6 +182,24 @@ def train(
         train_file, tok, max_length, use_chat_template, val_fraction, seed
     )
 
+    print(f"Training dataset size: {len(ds_train):,}")
+    print(f"Validation dataset size: {len(ds_eval):,}")
+    print(f"Using model: {model_name}")
+    print(f"Using tokenizer: {tok}")
+    print(f"Using output directory: {output_dir}")
+    print(f"Using max length: {max_length}")
+    print(f"Using per device train batch size: {per_device_train_batch_size}")
+    print(f"Using gradient accumulation steps: {gradient_accumulation_steps}")
+    print(f"Using number of train epochs: {num_train_epochs}")
+    print(f"Using learning rate: {learning_rate}")
+    print(f"Using weight decay: {weight_decay}")
+    print(f"Using warmup ratio: {warmup_ratio}")
+    print(f"Using lr scheduler type: {lr_scheduler_type}")
+    print(f"Using seed: {seed}")
+    print(f"Using fp16: {fp16}")
+    print(f"Using bf16: {bf16}")
+    print(f"Using use chat template: {use_chat_template}")
+    
     os.makedirs(output_dir, exist_ok=True)
     torch.backends.cuda.matmul.allow_tf32 = True
 
