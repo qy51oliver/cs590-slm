@@ -185,7 +185,6 @@ def train(
     print(f"Training dataset size: {len(ds_train):,}")
     print(f"Validation dataset size: {len(ds_eval):,}")
     print(f"Using model: {model_name}")
-    print(f"Using tokenizer: {tok}")
     print(f"Using output directory: {output_dir}")
     print(f"Using max length: {max_length}")
     print(f"Using per device train batch size: {per_device_train_batch_size}")
