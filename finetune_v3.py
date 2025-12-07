@@ -52,7 +52,7 @@ def build_prompt_and_target(ex, tokenizer, use_chat_template):
         target = key
         return {"prompt": prompt, "target": target}
 
-    # instruction_following  (pipeline feeds plain instruction through chat template)
+    # instruction_following
     if task in ("instruction_following", "ifeval"):
         answers = ex.get("answers") or []
         if not answers:
@@ -92,11 +92,19 @@ def tokenize_with_prompt_mask(tokenizer, example, max_length):
     return {"input_ids": input_ids, "attention_mask": attn_mask, "labels": labels}
 
 # ---------------- data + model loaders ----------------
-def load_and_prepare_dataset(train_file, tokenizer, max_length, use_chat_template):
+def load_and_prepare_datasets(
+    train_file,
+    tokenizer,
+    max_length,
+    use_chat_template,
+    val_fraction,
+    seed,
+):
     print(f"\nLoading dataset from: {train_file}")
     raw = load_dataset("json", data_files={"train": train_file})["train"]
     print(f"  Raw dataset size: {len(raw):,}")
 
+    # Keep only rows we can map to (prompt, target)
     def _keep_map(ex):
         pt = build_prompt_and_target(ex, tokenizer, use_chat_template)
         return {"_keep": pt is not None}
@@ -105,16 +113,33 @@ def load_and_prepare_dataset(train_file, tokenizer, max_length, use_chat_templat
     valid = raw.filter(lambda ex, idx: kept[idx]["_keep"], with_indices=True)
     print(f"  Valid examples after task-specific filtering: {len(valid):,} (dropped {len(raw)-len(valid):,})")
 
+    # Split BEFORE tokenization to avoid any leakage/bias
+    val_fraction = max(0.0, min(0.5, float(val_fraction)))
+    if val_fraction > 0.0 and len(valid) >= 10:
+        split = valid.train_test_split(test_size=val_fraction, seed=seed, shuffle=True)
+        dtrain, deval = split["train"], split["test"]
+    else:
+        dtrain, deval = valid, None
+
+    print(f"  Train split: {len(dtrain):,}")
+    if deval is not None:
+        print(f"  Val split:   {len(deval):,}")
+    else:
+        print("  Val split:   (disabled)")
+
     def _tok_map(ex):
         pt = build_prompt_and_target(ex, tokenizer, use_chat_template)
         return tokenize_with_prompt_mask(tokenizer, pt, max_length)
 
-    drop_cols = list(valid.column_names)
-    ds_train = valid.map(_tok_map, remove_columns=drop_cols, desc="Tokenizing", num_proc=1)
-    # after building ds_train, add:
-    too_long = sum(len(ex["labels"]) == max_length for ex in ds_train)
-    print(f"  Truncation-at-max_length examples: {too_long:,} (consider raising --max_length)")
-    return ds_train
+    drop_cols_tr = list(dtrain.column_names)
+    ds_train = dtrain.map(_tok_map, remove_columns=drop_cols_tr, desc="Tokenizing train", num_proc=1)
+
+    ds_eval = None
+    if deval is not None:
+        drop_cols_ev = list(deval.column_names)
+        ds_eval = deval.map(_tok_map, remove_columns=drop_cols_ev, desc="Tokenizing eval", num_proc=1)
+
+    return ds_train, ds_eval
 
 def load_tok_and_model(model_name):
     print(f"Loading tokenizer and model from: {model_name}")
@@ -135,22 +160,27 @@ def train(
     train_file,
     model_name,
     output_dir,
-    max_length=512,
-    per_device_train_batch_size=8,
-    gradient_accumulation_steps=2,
-    num_train_epochs=2,
-    learning_rate=2e-4,
-    weight_decay=0.01,
-    warmup_ratio=0.03,
-    lr_scheduler_type="cosine",
-    seed=42,
-    fp16=True,
-    bf16=False,
-    use_chat_template=True,   # <- default ON to mirror pipeline
+    max_length = 512,
+    per_device_train_batch_size = 8,
+    gradient_accumulation_steps = 4,
+    num_train_epochs = 3,
+    learning_rate = 2e-4,
+    weight_decay = 0.01,
+    warmup_ratio = 0.03,
+    lr_scheduler_type = "cosine",
+    seed = 42,
+    fp16 = False,
+    bf16 = True,
+    use_chat_template = True,
+    val_fraction = 0.10,
+    eval_strategy = "epoch",  
+    save_strategy = "epoch",  
 ):
     set_seed(seed)
     tok, model = load_tok_and_model(model_name)
-    ds_train = load_and_prepare_dataset(train_file, tok, max_length, use_chat_template)
+    ds_train, ds_eval = load_and_prepare_datasets(
+        train_file, tok, max_length, use_chat_template, val_fraction, seed
+    )
 
     os.makedirs(output_dir, exist_ok=True)
     torch.backends.cuda.matmul.allow_tf32 = True
@@ -165,9 +195,12 @@ def train(
         warmup_ratio=warmup_ratio,
         lr_scheduler_type=lr_scheduler_type,
         logging_steps=50,
-        save_strategy="epoch",
-        eval_strategy="no",
-        save_total_limit=2,
+        save_strategy=save_strategy,
+        eval_strategy=eval_strategy if ds_eval is not None else "no",
+        save_total_limit=3,
+        load_best_model_at_end=(ds_eval is not None),
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         seed=seed,
         fp16=fp16,
         bf16=bf16,
@@ -181,6 +214,7 @@ def train(
         model=model,
         args=args,
         train_dataset=ds_train,
+        eval_dataset=ds_eval,
         processing_class=tok,
         data_collator=default_data_collator,
     )
@@ -188,7 +222,7 @@ def train(
     trainer.train()
     trainer.save_model(output_dir)
     tok.save_pretrained(output_dir)
-    print(f"Done. Model saved to: {output_dir}")
+    print(f"Done. Best (by eval_loss) saved to: {output_dir}")
 
 # ---------------- cli ----------------
 def parse_args():
@@ -199,9 +233,9 @@ def parse_args():
 
     ap.add_argument("--max_length", type=int, default=512)
     ap.add_argument("--per_device_train_batch_size", type=int, default=8)
-    ap.add_argument("--gradient_accumulation_steps", type=int, default=2)
-    ap.add_argument("--num_train_epochs", type=int, default=2)
-    ap.add_argument("--learning_rate", type=float, default=2e-4)
+    ap.add_argument("--gradient_accumulation_steps", type=int, default=4)
+    ap.add_argument("--num_train_epochs", type=int, default=3)
+    ap.add_argument("--learning_rate", type=float, default=1e-4)
     ap.add_argument("--weight_decay", type=float, default=0.01)
     ap.add_argument("--warmup_ratio", type=float, default=0.03)
     ap.add_argument("--lr_scheduler_type", type=str, default="cosine")
@@ -211,6 +245,11 @@ def parse_args():
     ap.add_argument("--bf16", action="store_true")
     ap.add_argument("--no_chat_template", action="store_true",
                     help="Disable applying tokenizer.chat_template during training.")
+
+    ap.add_argument("--val_fraction", type=float, default=0.10,
+                    help="Fraction (0..0.5) of data reserved for validation.")
+    ap.add_argument("--eval_strategy", type=str, default="epoch",
+                    help="How often to run eval/saves when val data is present.")
     return ap.parse_args()
 
 def main():
@@ -231,6 +270,8 @@ def main():
         fp16=args.fp16,
         bf16=args.bf16,
         use_chat_template=not args.no_chat_template,
+        val_fraction=args.val_fraction,
+        eval_strategy=args.eval_strategy,
     )
 
 if __name__ == "__main__":
