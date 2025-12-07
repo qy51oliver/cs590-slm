@@ -1,11 +1,11 @@
 from huggingface_hub import HfApi
 
 api = HfApi()
-repo_id = "oliveryql/gemma270m-sft-reasoning" # change version number
+repo_id = "oliveryql/gemma270m-sft-fqa" 
 api.create_repo(repo_id, repo_type="model", private=True, exist_ok=True)
 
 api.upload_folder(
-    folder_path="~/cs590llm/cs590-slm/models/gemma270m-sft-reasoning",  # change model version here
+    folder_path="~/cs590llm/cs590-slm/models/gemma270m-sft-fqa",
     repo_id=repo_id,
     repo_type="model",
     path_in_repo=".",                # upload at repo root
