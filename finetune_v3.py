@@ -1,5 +1,4 @@
 import os, argparse, re, torch
-from typing import Any, Dict, List
 from datasets import load_dataset
 from transformers import (
     AutoModelForCausalLM,
@@ -11,7 +10,7 @@ from transformers import (
 )
 
 # ---------------- prompt builders  ----------------
-def _apply_chat_template(tokenizer, messages_or_str, use_chat_template: bool) -> str:
+def _apply_chat_template(tokenizer, messages_or_str, use_chat_template):
     if use_chat_template and getattr(tokenizer, "chat_template", None):
         msgs = messages_or_str if isinstance(messages_or_str, list) else [{"role":"user","content":str(messages_or_str)}]
         return tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -24,7 +23,7 @@ def _apply_chat_template(tokenizer, messages_or_str, use_chat_template: bool) ->
         return "\n".join(lines)
     return str(messages_or_str)
 
-def build_prompt_and_target(ex: Dict[str, Any], tokenizer, use_chat_template: bool):
+def build_prompt_and_target(ex, tokenizer, use_chat_template):
     task = (ex.get("task_type") or "").lower()
     q = ex.get("question", "") or ex.get("query", "")
     if not q:
@@ -65,7 +64,7 @@ def build_prompt_and_target(ex: Dict[str, Any], tokenizer, use_chat_template: bo
     return None
 
 # ---------------- tokenization (mask prompt, learn target) ----------------
-def tokenize_with_prompt_mask(tokenizer, example: Dict[str, str], max_length: int):
+def tokenize_with_prompt_mask(tokenizer, example, max_length):
     prompt = example["prompt"]
     target = example["target"]
 
@@ -93,7 +92,7 @@ def tokenize_with_prompt_mask(tokenizer, example: Dict[str, str], max_length: in
     return {"input_ids": input_ids, "attention_mask": attn_mask, "labels": labels}
 
 # ---------------- data + model loaders ----------------
-def load_and_prepare_dataset(train_file: str, tokenizer, max_length: int, use_chat_template: bool):
+def load_and_prepare_dataset(train_file, tokenizer, max_length, use_chat_template):
     print(f"\nLoading dataset from: {train_file}")
     raw = load_dataset("json", data_files={"train": train_file})["train"]
     print(f"  Raw dataset size: {len(raw):,}")
@@ -117,7 +116,7 @@ def load_and_prepare_dataset(train_file: str, tokenizer, max_length: int, use_ch
     print(f"  Truncation-at-max_length examples: {too_long:,} (consider raising --max_length)")
     return ds_train
 
-def load_tok_and_model(model_name: str):
+def load_tok_and_model(model_name):
     print(f"Loading tokenizer and model from: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -133,21 +132,21 @@ def load_tok_and_model(model_name: str):
 
 # ---------------- train ----------------
 def train(
-    train_file: str,
-    model_name: str,
-    output_dir: str,
-    max_length: int = 512,
-    per_device_train_batch_size: int = 8,
-    gradient_accumulation_steps: int = 2,
-    num_train_epochs: int = 2,
-    learning_rate: float = 2e-4,
-    weight_decay: float = 0.01,
-    warmup_ratio: float = 0.03,
-    lr_scheduler_type: str = "cosine",
-    seed: int = 42,
-    fp16: bool = True,
-    bf16: bool = False,
-    use_chat_template: bool = True,   # <- default ON to mirror pipeline
+    train_file,
+    model_name,
+    output_dir,
+    max_length=512,
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=2,
+    num_train_epochs=2,
+    learning_rate=2e-4,
+    weight_decay=0.01,
+    warmup_ratio=0.03,
+    lr_scheduler_type="cosine",
+    seed=42,
+    fp16=True,
+    bf16=False,
+    use_chat_template=True,   # <- default ON to mirror pipeline
 ):
     set_seed(seed)
     tok, model = load_tok_and_model(model_name)

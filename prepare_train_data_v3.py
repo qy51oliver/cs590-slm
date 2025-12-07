@@ -1,23 +1,22 @@
 import os, json, math, argparse, random, re
-from typing import List, Dict, Any
 from datasets import load_dataset
 
 # ------------------------- utils -------------------------
-def _ensure_dir(path: str):
+def _ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
-def _write_jsonl(path: str, rows: List[Dict[str, Any]]):
+def _write_jsonl(path, rows):
     _ensure_dir(os.path.dirname(path) or ".")
     with open(path, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     print(f"Wrote {len(rows):,} rows → {path}")
 
-def _read_jsonl(path: str):
+def _read_jsonl(path):
     with open(path, "r", encoding="utf-8") as f:
         return [json.loads(x) for x in f]
 
-def _extract_id(ex: Dict[str, Any], idx: int, candidates: List[str]) -> str:
+def _extract_id(ex, idx, candidates):
     """Return first available id-like field as string, else the index."""
     for k in candidates:
         if k in ex and ex[k] not in (None, ""):
@@ -27,9 +26,9 @@ def _extract_id(ex: Dict[str, Any], idx: int, candidates: List[str]) -> str:
                 pass
     return str(idx)
 
-def _merge_and_write(paths: List[str], out_path: str, shuffle: bool = True, seed: int = 42) -> str:
+def _merge_and_write(paths, out_path, shuffle=True, seed=42):
     rng = random.Random(seed)
-    merged: List[Dict[str, Any]] = []
+    merged = []
     for p in paths:
         merged.extend(_read_jsonl(p))
     if shuffle:
@@ -37,7 +36,7 @@ def _merge_and_write(paths: List[str], out_path: str, shuffle: bool = True, seed
     _write_jsonl(out_path, merged)
     return out_path
 
-def _mk_mcqa_question(stem: str, labels: List[str], texts: List[str]) -> str:
+def _mk_mcqa_question(stem, labels, texts):
     stem = (stem or "").strip()
     pairs = [f"{L}) {str(T).strip()}" for L, T in zip(labels, texts)]
     return "Question: " + stem + "\n\nChoices:\n" + "\n".join(pairs)
@@ -65,7 +64,7 @@ _ROLE_PREFIXES = (
 )
 _CODE_FENCE = r"^\s*```[a-zA-Z0-9]*\s*|\s*```\s*$"
 
-def _strip_chat_markers(text: str) -> str:
+def _strip_chat_markers(text):
     if not text:
         return ""
     t = text
@@ -105,10 +104,10 @@ CONSTRAINT_REGEX = re.compile(
     re.IGNORECASE
 )
 
-def _looks_constraint_like(text: str) -> bool:
+def _looks_constraint_like(text):
     return bool(CONSTRAINT_REGEX.search(text or ""))
 
-def _make_words(n: int) -> str:
+def _make_words(n):
     base = "lorem ipsum dolor sit amet consectetur adipiscing elit"
     words = (base.split() * ((n // 7) + 2))[:n]
     return " ".join(words)
@@ -116,16 +115,16 @@ def _make_words(n: int) -> str:
 # ---------- dataset builders ----------
 
 # =============== TRIVIA ==================
-def download_triviaqa_train(out_path: str, subset: str = "unfiltered.nocontext") -> str:
+def download_triviaqa_train(out_path, subset="unfiltered.nocontext"):
     ds = load_dataset("mandarjoshi/trivia_qa", subset, split="train")
-    rows: List[Dict[str, Any]] = []
+    rows = []
     for idx, ex in enumerate(ds):
         qid = _extract_id(ex, idx, candidates=["id","qid","question_id","questionId","example_id","key"])
         q = ex.get("question", "")
         ans = ex.get("answer", {}) or {}
         aliases = ans.get("normalized_aliases") or []
         main_val = ans.get("normalized_value") or ans.get("value")
-        golds: List[str] = [str(a) for a in aliases] if aliases else ([str(main_val)] if main_val else [])
+        golds = [str(a) for a in aliases] if aliases else ([str(main_val)] if main_val else [])
         rows.append({
             "id": qid,
             "task_type": "factual_qa",
@@ -136,9 +135,9 @@ def download_triviaqa_train(out_path: str, subset: str = "unfiltered.nocontext")
     return out_path
 
 # ============================ MCQ (ARC/CSQA/OBQA) ===========================
-def arc_rows_from_subset(subset: str) -> List[Dict[str, Any]]:
+def arc_rows_from_subset(subset):
     ds = load_dataset("allenai/ai2_arc", subset, split="train")
-    rows: List[Dict[str, Any]] = []
+    rows = []
     for idx, ex in enumerate(ds):
         qid = _extract_id(ex, idx, ["id","qid","question_id","questionId","example_id","key"])
         ch = ex.get("choices", {}) or {}
@@ -158,26 +157,26 @@ def arc_rows_from_subset(subset: str) -> List[Dict[str, Any]]:
         })
     return rows
 
-def download_arc_both_train(out_path: str) -> str:
+def download_arc_both_train(out_path):
     rows = arc_rows_from_subset("ARC-Challenge") + arc_rows_from_subset("ARC-Easy")
     _write_jsonl(out_path, rows)
     return out_path
 
-def download_arc_c_train(out_path: str) -> str:
+def download_arc_c_train(out_path):
     rows = arc_rows_from_subset("ARC-Challenge")
     _write_jsonl(out_path, rows)
     return out_path
 
-def download_arc_e_train(out_path: str) -> str:
+def download_arc_e_train(out_path):
     rows = arc_rows_from_subset("ARC-Easy")
     _write_jsonl(out_path, rows)
     return out_path
 
 
-def build_csqa_train(out_path: str, seed: int = 42) -> str:
+def build_csqa_train(out_path, seed=42):
     ds = load_dataset("tau/commonsense_qa", split="train")
     rng = random.Random(seed)
-    rows: List[Dict[str, Any]] = []
+    rows = []
     for idx, ex in enumerate(ds):
         rid = _extract_id(ex, idx, ["id","question_id","qid","example_id"])
         stem = str(ex.get("question", "") or "")
@@ -205,9 +204,9 @@ def build_csqa_train(out_path: str, seed: int = 42) -> str:
         })
     _write_jsonl(out_path, rows); return out_path
 
-def build_obqa_train(out_path: str) -> str:
+def build_obqa_train(out_path):
     ds = load_dataset("allenai/openbookqa", "main", split="train")
-    rows: List[Dict[str, Any]] = []
+    rows = []
     for idx, ex in enumerate(ds):
         rid   = _extract_id(ex, idx, ["id","question_id","qid","example_id","fact_id"])
         stem  = str(ex.get("question_stem", "") or "")
@@ -230,12 +229,12 @@ def build_obqa_train(out_path: str) -> str:
     return out_path
 
 # ---------------- ARC oversampling ---------------- #
-def oversample_arc_rows_with_shuffles(rows: List[Dict[str, Any]], shuffle_reps: int, seed: int) -> List[Dict[str, Any]]:
+def oversample_arc_rows_with_shuffles(rows, shuffle_reps, seed):
     """Label-preserving choice-order shuffles to increase ARC data (4-choice items only)."""
     if shuffle_reps <= 1:
         return rows
     rng = random.Random(seed)
-    out: List[Dict[str, Any]] = []
+    out = []
     for r in rows:
         out.append(r)
         ch = r.get("choices", {}) or {}
@@ -263,14 +262,14 @@ def oversample_arc_rows_with_shuffles(rows: List[Dict[str, Any]], shuffle_reps: 
             })
     return out
 
-def oversample_arc_file(in_path: str, out_path: str, shuffle_reps: int, seed: int = 42) -> str:
+def oversample_arc_file(in_path, out_path, shuffle_reps, seed=42):
     rows = _read_jsonl(in_path)
     rows_aug = oversample_arc_rows_with_shuffles(rows, shuffle_reps, seed)
     _write_jsonl(out_path, rows_aug)
     return out_path
 
 # ======================= IF (TULU-3 IF / SmolTalk) ==========================
-def build_tulu3_if_train(out_path: str, *, max_examples: int = None, filter_constraints: bool = False, seed: int = 42) -> str:
+def build_tulu3_if_train(out_path, *, max_examples=None, filter_constraints=False, seed=42):
     ds = load_dataset("allenai/tulu-3-sft-personas-instruction-following", split="train")
     rng = random.Random(seed)
     rows = []
@@ -296,7 +295,7 @@ def build_tulu3_if_train(out_path: str, *, max_examples: int = None, filter_cons
             break
     _write_jsonl(out_path, rows); return out_path
 
-def build_smoltalk_train(out_path: str, subset: str = "all", *, max_examples: int = None, filter_constraints: bool = False, seed: int = 42) -> str:
+def build_smoltalk_train(out_path, subset="all", *, max_examples=None, filter_constraints=False, seed=42):
     ds = load_dataset("HuggingFaceTB/smoltalk", subset, split="train")
     rows = []
     for idx, ex in enumerate(ds):
@@ -323,7 +322,7 @@ def build_smoltalk_train(out_path: str, subset: str = "all", *, max_examples: in
             break
     _write_jsonl(out_path, rows); return out_path
 
-def build_synthetic_ifeval_like(out_path: str, n: int = 20000, seed: int = 42) -> str:
+def build_synthetic_ifeval_like(out_path, n=20000, seed=42):
     rng = random.Random(seed)
     rows = []
     for i in range(n):
