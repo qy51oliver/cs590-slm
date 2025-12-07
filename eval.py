@@ -26,7 +26,7 @@ def main():
     ap = argparse.ArgumentParser(description="Given a task, generate predictions and then score them from a single unified JSONL")
     ap.add_argument("--task", choices=["triviaqa", "arc-c", "ifeval"], default="arc-c")
     ap.add_argument("--data_file", default=None, help="Optional explicit data file; otherwise chosen by task")
-    ap.add_argument("--model", default="google/gemma-3-270m-it")
+    ap.add_argument("--model", default="google/gemma-3-270m")
     ap.add_argument("--out_dir", type=str, default="outputs", help="Directory to save predictions and metrics")
     ap.add_argument("--data-size", type=int, default=1000, help="Number of data items to process; -1 means all")
 

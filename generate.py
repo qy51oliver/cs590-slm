@@ -65,7 +65,7 @@ def main():
 
     ap.add_argument("--data_file", default="data/triviaqa_test.jsonl",
                     help="Input JSONL with queries (task-specific schema)")
-    ap.add_argument("--model", default="google/gemma-3-270m-it")
+    ap.add_argument("--model", default="google/gemma-3-270m")
     ap.add_argument("--out_dir", type=str, default="outputs", help="Output JSONL with predictions aligned to inputs")
     ap.add_argument("--data-size", type=int, default=500, help="Number of data items to process; -1 means all")
 
