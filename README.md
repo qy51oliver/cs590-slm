@@ -120,7 +120,7 @@ Upload resulted `submissions.zip` to the Gradescope autograder. Ensure your JSON
 
 ## Submission for Hidden sets
 
-Use `submit.py` to generate the three required JSONLs (one per task), aggregate metrics across seeds, and build `submissions_hidden.zip`. You only need three runs for the hidden set
+Use `submit.py` to generate the three required JSONLs (one per task),  and build `submissions_hidden.zip`. You only need three runs for the hidden set, and we won't score submissions locally. Please see scores on gradescope.
 ```bash
 python submit.py \
   --model <your_own_model> \
