@@ -99,6 +99,7 @@ def load_and_prepare_datasets(
     use_chat_template,
     val_fraction,
     seed,
+    if_max_total_tokens = 512,
 ):
     print(f"\nLoading dataset from: {train_file}")
     raw = load_dataset("json", data_files={"train": train_file})["train"]
@@ -112,7 +113,28 @@ def load_and_prepare_datasets(
     kept = raw.map(_keep_map, remove_columns=[])
     valid = raw.filter(lambda ex, idx: kept[idx]["_keep"], with_indices=True)
     print(f"  Valid examples after task-specific filtering: {len(valid):,} (dropped {len(raw)-len(valid):,})")
+    
+    # --- hard-cap length filter (IF only) ---
+    if if_max_total_tokens > 0:
+        def _len_keep_map(ex):
+            t = (ex.get("task_type") or "").lower()
+            if t not in ("instruction_following", "ifeval"):
+                return {"_len_keep": True}
+            pt = build_prompt_and_target(ex, tokenizer, use_chat_template)
+            if pt is None:
+                return {"_len_keep": False}
+            p_ids = tokenizer(pt["prompt"], add_special_tokens=False).input_ids
+            y_ids = tokenizer(pt["target"], add_special_tokens=False).input_ids
+            return {"_len_keep": (len(p_ids) + len(y_ids)) <= if_max_total_tokens}
 
+        len_flags = valid.map(_len_keep_map, remove_columns=[])
+        before = len(valid)
+        valid = valid.filter(lambda ex, idx: len_flags[idx]["_len_keep"], with_indices=True)
+        print(f"  IF length cap ≤ {if_max_total_tokens} tokens: kept {len(valid):,}, dropped {before - len(valid):,}")
+        
+    else:
+        print("  IF length cap: (disabled)")
+        
     # Split BEFORE tokenization to avoid any leakage/bias
     val_fraction = max(0.0, min(0.5, float(val_fraction)))
     if val_fraction > 0.0 and len(valid) >= 10:
@@ -175,11 +197,12 @@ def train(
     val_fraction = 0.10,
     eval_strategy = "epoch",  
     save_strategy = "epoch",  
+    if_max_total_tokens = 512,
 ):
     set_seed(seed)
     tok, model = load_tok_and_model(model_name)
     ds_train, ds_eval = load_and_prepare_datasets(
-        train_file, tok, max_length, use_chat_template, val_fraction, seed
+        train_file, tok, max_length, use_chat_template, val_fraction, seed, if_max_total_tokens
     )
 
     print(f"Training dataset size: {len(ds_train):,}")
@@ -267,6 +290,10 @@ def parse_args():
                     help="Fraction (0..0.5) of data reserved for validation.")
     ap.add_argument("--eval_strategy", type=str, default="epoch",
                     help="How often to run eval/saves when val data is present.")
+
+    ap.add_argument("--if_max_total_tokens", type=int, default=512,
+                    help="Maximum total number of tokens for IF tasks.")
+    
     return ap.parse_args()
 
 def main():
@@ -289,6 +316,7 @@ def main():
         use_chat_template=not args.no_chat_template,
         val_fraction=args.val_fraction,
         eval_strategy=args.eval_strategy,
+        if_max_total_tokens=args.if_max_total_tokens,
     )
 
 if __name__ == "__main__":
