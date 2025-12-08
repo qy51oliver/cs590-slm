@@ -41,4 +41,7 @@ scripts/
 outputs/
 data/
 submissions/
+notebooks/
 submissions.zip
+
+download_hidden_eval_data.py

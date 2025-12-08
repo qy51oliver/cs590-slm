@@ -116,6 +116,7 @@ def main():
     ap.add_argument("--top_p", type=float, default=0.95)
 
     ap.add_argument("--seeds", type=str, default="1", help="Comma-separated seeds for repeated runs")
+    ap.add_argument("--submit_hidden", action="store_true", help="Submit hidden data")
 
     args = ap.parse_args()
 
@@ -134,6 +135,14 @@ def main():
         "arc-c": args.data_arc_c,
         "ifeval": args.data_ifeval,
     }
+    if args.submit_hidden:
+        task_to_path = {
+            "hidden_factual_qa": "hidden_data/hidden_factual_qa_test.jsonl",
+            "hidden_reasoning": "hidden_data/hidden_reasoning_test.jsonl",
+            "hidden_instruction_following": "hidden_data/hidden_instruction_following_test.jsonl",
+        }
+        # hidden set only requires 3 runs
+        seeds = [1, 2, 3]
 
     all_scores: Dict[str, Any] = {}
     written_jsonls: List[str] = []
@@ -185,7 +194,8 @@ def main():
         json.dump(all_scores, f, indent=2)
 
     # Create zip archive with only the three task JSONLs
-    zip_path = os.path.abspath(os.path.join(parent_dir, "submissions.zip"))
+    submission_fname = "submissions.zip" if not args.submit_hidden else "submissions_hidden.zip"
+    zip_path = os.path.abspath(os.path.join(parent_dir, submission_fname))
     with ZipFile(zip_path, "w", compression=ZIP_DEFLATED) as zf:
         # Prefer canonical order and names
         expected = [
@@ -193,38 +203,45 @@ def main():
             os.path.join(args.out_dir, "arc-c_preds.jsonl"),
             os.path.join(args.out_dir, "ifeval_preds.jsonl"),
         ]
+        if args.submit_hidden:
+            expected = [
+                os.path.join(args.out_dir, "hidden_factual_qa_preds.jsonl"),
+                os.path.join(args.out_dir, "hidden_reasoning_preds.jsonl"),
+                os.path.join(args.out_dir, "hidden_instruction_following_preds.jsonl"),
+            ]
         for fpath in expected:
             if os.path.exists(fpath):
                 zf.write(fpath, arcname=os.path.basename(fpath))
 
-    # Print concise summary
-    summary: Dict[str, Dict[str, Tuple[float, float]]] = {}
-    for task, data in all_scores.items():
-        agg = data.get("aggregate", {})
-        # Heuristic: pick a primary metric to display prominently
-        primary_keys = [
-            "acc",  # arc-c
-            "avg_em_relax",  # triviaqa
-            "eval_results_loose.instruction_accuracy",  # possible ifeval summary
-        ]
-        primary = None
-        for k in primary_keys:
-            if k in agg:
-                primary = k
-                break
-        if primary is None and agg:
-            primary = sorted(agg.keys())[0]
-        if primary:
-            m = agg[primary]
-            summary[task] = {primary: (m.get("mean", 0.0), m.get("std", 0.0))}
+    # Print concise summary for public set
+    if not args.submit_hidden:
+        summary: Dict[str, Dict[str, Tuple[float, float]]] = {}
+        for task, data in all_scores.items():
+            agg = data.get("aggregate", {})
+            # Heuristic: pick a primary metric to display prominently
+            primary_keys = [
+                "acc",  # arc-c
+                "avg_em_relax",  # triviaqa
+                "eval_results_loose.instruction_accuracy",  # possible ifeval summary
+            ]
+            primary = None
+            for k in primary_keys:
+                if k in agg:
+                    primary = k
+                    break
+            if primary is None and agg:
+                primary = sorted(agg.keys())[0]
+            if primary:
+                m = agg[primary]
+                summary[task] = {primary: (m.get("mean", 0.0), m.get("std", 0.0))}
 
-    print(json.dumps({
-        "out_dir": os.path.abspath(args.out_dir),
-        "jsonls": [os.path.abspath(p) for p in written_jsonls],
-        "zip": zip_path,
-        "scores_json": scores_path,
-        "summary": summary
-    }, indent=2))
+        print(json.dumps({
+            "out_dir": os.path.abspath(args.out_dir),
+            "jsonls": [os.path.abspath(p) for p in written_jsonls],
+            "zip": zip_path,
+            "scores_json": scores_path,
+            "summary": summary
+        }, indent=2))
 
 
 if __name__ == "__main__":
