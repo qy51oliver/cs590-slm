@@ -218,7 +218,7 @@ def train(
         args=args,
         train_dataset=dtrain,
         eval_dataset=dval,
-        tokenizer=tok,
+        processing_class=tok,
         data_collator=DataCollatorWithPadding(tokenizer=tok, pad_to_multiple_of=8),
         compute_metrics=_compute_metrics_builder(id2label),
     )
@@ -233,17 +233,14 @@ def train(
 # -------------------- CLI --------------------
 def parse_args():
     ap = argparse.ArgumentParser(description="Train a strict 3-way router classifier (FQA/REAS/IF) with no fallbacks.")
-    # Deterministic defaults for your repo layout
     ap.add_argument("--train_file", default="data/router_cls/router_cls_train.jsonl", type=str)
     ap.add_argument("--val_file",   default="data/router_cls/router_cls_val.jsonl", type=str)
     ap.add_argument("--model",      default="google/gemma-3-270m", type=str)
     ap.add_argument("--output_dir", default="models/gemma270m-sft-router", type=str)
 
-    # Longer default length; head+tail keeps both task cues and options
     ap.add_argument("--max_length", type=int, default=1024)
     ap.add_argument("--truncation_style", type=str, default="headtail", choices=["head","headtail"])
 
-    # Safe-by-default batch for 1024 ctx; tune if you have headroom
     ap.add_argument("--per_device_train_batch_size", type=int, default=8)
     ap.add_argument("--per_device_eval_batch_size",  type=int, default=8)
     ap.add_argument("--gradient_accumulation_steps", type=int, default=4)
