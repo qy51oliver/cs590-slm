@@ -1,7 +1,6 @@
-# quick_chat_test.py
-import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from pipelines import apply_instruct_template
 
 QUESTION = """When was the battle of Hastings?"""
 CONTEXT = """Alexander Fleming discovered penicillin in 1928 at St Mary's Hospital in London."""
@@ -25,20 +24,12 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
 ).eval()
 
-# build a chat prompt using the model's chat template
+q_text = QUESTION if not CONTEXT else f"{QUESTION}\nContext:\n{CONTEXT}"
 messages = [
-    {
-        "role": "user",
-        "content": (
-            "You are a concise factual QA assistant. Use ONLY the context; if not answerable, say \"I don't know\".\n\n"
-            f"Question: {QUESTION}\n\nContext:\n{CONTEXT}\n\nAnswer:"
-        ),
-    }
+    {"role": "user", "content": f"Answer the question concisely.\nQuestion: {q_text}\nAnswer:"}
 ]
 
-prompt = tokenizer.apply_chat_template(
-    messages, tokenize=False, add_generation_prompt=True
-)
+prompt = apply_instruct_template(messages, tokenizer)
 
 # generate
 enc = tokenizer([prompt], return_tensors="pt", padding=True).to(model.device)
