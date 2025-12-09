@@ -27,10 +27,9 @@ class HFRouterClassifier:
             self.tok.pad_token = self.tok.eos_token
         self.tok.padding_side = "right"  # classifier training used right padding
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, trust_remote_code=True, device_map=None
+            model_name, trust_remote_code=True, device_map="auto"
         )
         self.model.eval()
-        self.model.to("cpu")
         self.max_length = int(max_length)
         self.head_ratio = float(head_ratio)
 
@@ -49,7 +48,7 @@ class HFRouterClassifier:
             ids = self.tok(t.strip(), add_special_tokens=True, truncation=False)["input_ids"]
             ids = self._head_tail(ids)
             encs.append({"input_ids": ids, "attention_mask": [1] * len(ids)})
-        batch = self.tok.pad(encs, padding=True, return_tensors="pt").to("cpu")
+        batch = self.tok.pad(encs, padding=True, return_tensors="pt").to(self.model.device)
 
         logits = self.model(**batch).logits  # [B, 3]
         pred_ids = logits.argmax(dim=-1).tolist()
@@ -322,7 +321,6 @@ class RouterPipeline(BasePipeline):
             logic: Optional[ProcessLogic] = None,
             **gen_kwargs) -> List[str]:
         return self.run_with_router(items, self._router, **gen_kwargs)
-
 
 
 

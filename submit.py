@@ -109,6 +109,14 @@ def main():
     ap.add_argument("--data_ifeval", default="data/ifeval_test.jsonl")
     ap.add_argument("--data_size", type=int, default=1000, help="Number of items to process; -1 for all")
 
+    ap.add_argument("--router_model", type=str, default="oliveryql/gemma270m-sft-router")
+    ap.add_argument("--fqa_model", type=str, default="oliveryql/gemma270m-sft-fqa")
+    ap.add_argument("--reas_model", type=str, default="oliveryql/gemma270m-sft-reasoning")
+    ap.add_argument("--if_model", type=str, default="google/gemma-3-270m-it")
+    ap.add_argument("--router_max_len", type=int, default=1024)
+    ap.add_argument("--evict_after_route", action="store_true",
+                    help="Unload each expert after finishing its bucket to reduce VRAM.")
+    
     ap.add_argument("--batch_size", type=int, default=512)
     ap.add_argument("--max_new_tokens", type=int, default=512)
     ap.add_argument("--do_sample", action="store_true", help="Enable sampling for stochastic runs (recommended)")
@@ -117,6 +125,7 @@ def main():
 
     ap.add_argument("--seeds", type=str, default="1", help="Comma-separated seeds for repeated runs")
     ap.add_argument("--submit_hidden", action="store_true", help="Submit hidden data")
+
 
     args = ap.parse_args()
 
@@ -128,8 +137,22 @@ def main():
         "our": OurPipeline,
         "base": BasePipeline,
     }
-    pipeline = pipeline_map[args.pipeline](args.model)
-
+    
+    print(f"Using pipeline: {args.pipeline}")
+    if args.pipeline == "our":
+        pipeline = OurPipeline(
+            router_model=args.router_model,
+            experts={
+                "factual_qa": args.fqa_model,
+                "reasoning": args.reas_model,
+                "instruction_following": args.if_model,
+            },
+            router_max_len=args.router_max_len,
+            evict_after_route=args.evict_after_route,
+        )
+    else:
+        pipeline = pipeline_map[args.pipeline](args.model)
+        
     task_to_path = {
         "triviaqa": args.data_triviaqa,
         "arc-c": args.data_arc_c,
