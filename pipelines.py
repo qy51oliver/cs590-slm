@@ -206,6 +206,7 @@ class InstructionFollowingProcessor(ProcessLogic):
 # ---------------- base inference pipeline (loads model, uses processors) ----------------
 class BasePipeline:
     def __init__(self, model_name: str):
+        print(f"[BasePipeline] Loading model: {model_name}")
         self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", trust_remote_code=True)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         
