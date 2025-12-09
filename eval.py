@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from pipelines import (
     RouterPipeline,
+    OurPipeline,
 )
 from generate import generate_rows, _write_jsonl, _read_jsonl
 from score import score_from_rows
@@ -26,7 +27,7 @@ def main():
     ap = argparse.ArgumentParser(description="Given a task, generate predictions and then score them from a single unified JSONL")
     ap.add_argument("--task", choices=["triviaqa", "arc-c", "ifeval"], default="arc-c")
     ap.add_argument("--data_file", default=None, help="Optional explicit data file; otherwise chosen by task")
-    ap.add_argument("--model", default="google/gemma-3-270m")
+    # ap.add_argument("--model", default="google/gemma-3-270m")
     ap.add_argument("--out_dir", type=str, default="outputs", help="Directory to save predictions and metrics")
     ap.add_argument("--data-size", type=int, default=1000, help="Number of data items to process; -1 means all")
 
@@ -35,14 +36,31 @@ def main():
     ap.add_argument("--do-sample", action="store_true")
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=0.95)
+    
+    ap.add_argument("--router_model", type=str, default="oliveryql/gemma270m-sft-router")
+    ap.add_argument("--fqa_model", type=str, default="oliveryql/gemma270m-sft-fqa")
+    ap.add_argument("--reas_model", type=str, default="oliveryql/gemma270m-sft-reasoning")
+    ap.add_argument("--if_model", type=str, default="google/gemma-3-270m-it")
+    ap.add_argument("--router_max_len", type=int, default=1024)
+    ap.add_argument("--evict_after_route", action="store_true",
+                    help="Unload each expert after finishing its bucket to reduce VRAM.")
 
     args = ap.parse_args()
     data_file = args.data_file or __default_data_file_for_task(args.task)
     items = _read_jsonl(data_file)
     items = items[: args.data_size if args.data_size > 0 else None]
 
-    pipeline = RouterPipeline(args.model)
-
+    pipeline = OurPipeline(
+        router_model=args.router_model,
+        experts={
+            "factual_qa": args.fqa_model,
+            "reasoning": args.reas_model,
+            "instruction_following": args.if_model,
+        },
+        router_max_len=args.router_max_len,
+        evict_after_route=args.evict_after_route,
+    )
+    
     # args.temperature = 0.2
 
     # Route by task_type values produced by downloader: triviaqa, arc-c, ifeval

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import re
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizerBase
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizerBase, AutoModelForSequenceClassification
 from tqdm import tqdm
 
 # try:
@@ -12,6 +12,57 @@ from tqdm import tqdm
 #     VLLM_AVAILABLE = False
 
 
+# ---- Router classifier (HF sequence classification) ----
+_LABEL2ROUTE = {"FQA": "factual_qa", "REAS": "reasoning", "IF": "instruction_following"}
+_ALLOWED_ROUTES = set(_LABEL2ROUTE.values())
+
+class HFRouterClassifier:
+    """
+    Uses a Gemma-3-270M sequence-classification head trained on labels: FQA / REAS / IF.
+    Predicts a route key: 'factual_qa' | 'reasoning' | 'instruction_following'.
+    """
+    def __init__(self, model_name, max_length=1024, head_ratio=0.7):
+        self.tok = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        if self.tok.pad_token is None:
+            self.tok.pad_token = self.tok.eos_token
+        self.tok.padding_side = "right"  # classifier training used right padding
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, trust_remote_code=True, device_map="auto"
+        )
+        self.model.eval()
+        self.max_length = int(max_length)
+        self.head_ratio = float(head_ratio)
+
+    def _head_tail(self, ids):
+        if len(ids) <= self.max_length:
+            return ids
+        head = int(self.max_length * self.head_ratio)
+        tail = max(1, self.max_length - head)
+        return ids[:head] + ids[-tail:]
+
+    @torch.no_grad()
+    def predict_routes(self, texts):
+        # texts: list of raw user-facing prompts/questions
+        encs = []
+        for t in texts:
+            ids = self.tok(t.strip(), add_special_tokens=True, truncation=False)["input_ids"]
+            ids = self._head_tail(ids)
+            encs.append({"input_ids": ids, "attention_mask": [1] * len(ids)})
+        batch = self.tok.pad(encs, padding=True, return_tensors="pt").to(self.model.device)
+
+        logits = self.model(**batch).logits  # [B, 3]
+        pred_ids = logits.argmax(dim=-1).tolist()
+        # model.config.id2label should be present from training; fallback maps 0,1,2 in order FQA/REAS/IF
+        id2label = getattr(self.model.config, "id2label", {0: "FQA", 1: "REAS", 2: "IF"})
+        labels = [id2label[int(i)] for i in pred_ids]
+        routes = []
+        for lab in labels:
+            if lab not in _LABEL2ROUTE:
+                raise ValueError(f"Router produced unknown label: {lab}")
+            routes.append(_LABEL2ROUTE[lab])
+        return routes
+    
+    
 # ---------------- helpers ----------------
 def apply_instruct_template(prompt, tokenizer: PreTrainedTokenizerBase) -> str:
     has_chat = tokenizer and hasattr(tokenizer, 'chat_template') and tokenizer.chat_template
@@ -143,9 +194,13 @@ class ReasoningProcessor(ProcessLogic):
 
 class InstructionFollowingProcessor(ProcessLogic):
     def preprocess(self, items: List[Dict[str, Any]], tokenizer: PreTrainedTokenizerBase) -> List[str]:
-        prompts = [str(it.get("prompt", "")) for it in items]
-        # apply chat template
-        return [apply_instruct_template(p, tokenizer) for p in prompts]
+        texts = []
+        for it in items:
+            txt = it.get("prompt")
+            if not txt:
+                txt = it.get("question") or it.get("query") or ""
+            texts.append(str(txt))
+        return [apply_instruct_template(t, tokenizer) for t in texts]
 
 
 # ---------------- base inference pipeline (loads model, uses processors) ----------------
@@ -268,11 +323,127 @@ class RouterPipeline(BasePipeline):
         return self.run_with_router(items, self._router, **gen_kwargs)
 
 
-class OurPipeline(BasePipeline):
+
+
+def _text_for_router(item):
+    for k in ("question", "prompt", "query"):
+        if item.get(k):
+            return str(item[k])
+    raise ValueError("Item missing text field: expected one of ['question','prompt','query'].")
+
+class OurPipeline:
     """
-    TODO: implement your own pipeline by extending BasePipeline
-    1. You can override any method in BasePipeline to customize the pipeline
-    2. If you would like to use a router-based pipeline, you need to implement the _router function and train your own router, You can not use the task type to route the pipeline as shown in the RouterPipeline
+    Router + 3 experts (lazy-loaded).
+    - router_model: HF repo/path of the classifier (sequence classification head)
+    - experts: dict {'factual_qa','reasoning','instruction_following'} -> HF repo/path for each expert
+    - router_max_len: head+tail truncated context length used by the router encoder
+    - evict_after_route: if True, unload each expert after processing its bucket to cap VRAM
     """
-    def __init__(self, model_name: str):
-        super().__init__(model_name)
+    def __init__(
+        self,
+        router_model: Optional[str] = None,
+        experts: Optional[Dict[str, str]] = None,
+        router_max_len: int = 1024,
+        evict_after_route: bool = False,
+    ):
+        # Respect caller args; only fall back if None
+        if router_model is None:
+            router_model = "oliveryql/gemma270m-sft-router"
+
+        if experts is None:
+            experts = {
+                "factual_qa": "oliveryql/gemma270m-sft-fqa",
+                "reasoning": "oliveryql/gemma270m-sft-reasoning",
+                "instruction_following": "google/gemma-3-270m-it",
+            }
+
+        missing = _ALLOWED_ROUTES - set(experts.keys())
+        if missing:
+            raise ValueError(f"experts missing routes: {sorted(missing)}")
+
+        # Router (small classifier)
+        self.router = HFRouterClassifier(router_model, max_length=router_max_len)
+
+        # Store expert model names; defer loading until actually needed
+        self._expert_names: Dict[str, str] = dict(experts)
+        self._expert_pipes: Dict[str, Optional[BasePipeline]] = {k: None for k in experts.keys()}
+
+        # One processor per route
+        self.logic_map = {
+            "factual_qa": FactualQAProcessor(),
+            "reasoning": ReasoningProcessor(),
+            "instruction_following": InstructionFollowingProcessor(),
+        }
+
+        self.evict_after_route = bool(evict_after_route)
+
+    def _get_expert(self, route_key: str) -> BasePipeline:
+        pipe = self._expert_pipes.get(route_key)
+        if pipe is not None:
+            return pipe
+        model_name = self._expert_names[route_key]
+        pipe = BasePipeline(model_name)  # loads tokenizer+model with device_map="auto"
+        self._expert_pipes[route_key] = pipe
+        return pipe
+
+    def _evict_expert(self, route_key: str):
+        pipe = self._expert_pipes.get(route_key)
+        if pipe is None:
+            return
+        # Best-effort cleanup
+        try:
+            if hasattr(pipe, "model"):
+                del pipe.model
+            if hasattr(pipe, "tokenizer"):
+                del pipe.tokenizer
+        except Exception:
+            pass
+        self._expert_pipes[route_key] = None
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        import gc
+        gc.collect()
+
+    def run(
+        self,
+        items: List[Dict[str, Any]],
+        *,
+        batch_size: int = 16,
+        max_new_tokens: int = 128,
+        do_sample: bool = False,
+        temperature: float = 0.7,
+        top_p: float = 0.95,
+    ) -> List[str]:
+        # 1) Route each item using the classifier
+        texts = [_text_for_router(it) for it in items]
+        routes = self.router.predict_routes(texts)
+
+        # 2) Bucket indices by route
+        buckets: Dict[str, List[int]] = {}
+        for idx, rk in enumerate(routes):
+            if rk not in _ALLOWED_ROUTES:
+                raise ValueError(f"Unknown route from router: {rk}")
+            buckets.setdefault(rk, []).append(idx)
+
+        # 3) Run each bucket on its expert with the matching processor
+        outputs: List[str] = [""] * len(items)
+        for rk, idxs in buckets.items():
+            sub_items = [items[i] for i in idxs]
+            pipe = self._get_expert(rk)
+            logic = self.logic_map[rk]
+            preds = pipe.run(
+                sub_items,
+                logic=logic,
+                batch_size=batch_size,
+                max_new_tokens=max_new_tokens,
+                do_sample=do_sample,
+                temperature=temperature,
+                top_p=top_p,
+            )
+            for i, p in zip(idxs, preds):
+                outputs[i] = p
+
+            if self.evict_after_route:
+                self._evict_expert(rk)
+
+        return outputs
