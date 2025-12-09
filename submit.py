@@ -112,7 +112,7 @@ def main():
     ap.add_argument("--router_model", type=str, default="oliveryql/gemma270m-sft-router")
     ap.add_argument("--fqa_model", type=str, default="oliveryql/gemma270m-sft-fqa")
     ap.add_argument("--reas_model", type=str, default="oliveryql/gemma270m-sft-reasoning")
-    ap.add_argument("--if_model", type=str, default="google/gemma-3-270m-it")
+    ap.add_argument("--if_model", type=str, default="oliveryql/gemma270m-sft-if")
     ap.add_argument("--router_max_len", type=int, default=1024)
     ap.add_argument("--evict_after_route", action="store_true",
                     help="Unload each expert after finishing its bucket to reduce VRAM.")
