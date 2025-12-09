@@ -170,6 +170,20 @@ def train(
     print(f"Tokenized sizes → train: {len(dtrain):,}, val: {len(dval):,}")
 
     set_seed(seed)
+    
+    print(f"Using output directory: {output_dir}")
+    print(f"Using max length: {max_length}")
+    print(f"Using truncation style: {truncation_style}")
+    print(f"Using per device train batch size: {per_device_train_batch_size}")
+    print(f"Using per device eval batch size: {per_device_eval_batch_size}")
+    print(f"Using gradient accumulation steps: {gradient_accumulation_steps}")
+    print(f"Using number of train epochs: {num_train_epochs}")
+    print(f"Using learning rate: {learning_rate}")
+    print(f"Using weight decay: {weight_decay}")
+    print(f"Using warmup ratio: {warmup_ratio}")
+    print(f"Using fp16: {fp16}")
+    print(f"Using bf16: {bf16}")
+
     os.makedirs(output_dir, exist_ok=True)
     torch.backends.cuda.matmul.allow_tf32 = True
 
@@ -223,16 +237,16 @@ def parse_args():
     ap.add_argument("--train_file", default="data/router_cls/router_cls_train.jsonl", type=str)
     ap.add_argument("--val_file",   default="data/router_cls/router_cls_val.jsonl", type=str)
     ap.add_argument("--model",      default="google/gemma-3-270m", type=str)
-    ap.add_argument("--output_dir", default="models/router-cls-gemma270m", type=str)
+    ap.add_argument("--output_dir", default="models/gemma270m-sft-router", type=str)
 
     # Longer default length; head+tail keeps both task cues and options
     ap.add_argument("--max_length", type=int, default=1024)
     ap.add_argument("--truncation_style", type=str, default="headtail", choices=["head","headtail"])
 
     # Safe-by-default batch for 1024 ctx; tune if you have headroom
-    ap.add_argument("--per_device_train_batch_size", type=int, default=16)
-    ap.add_argument("--per_device_eval_batch_size",  type=int, default=64)
-    ap.add_argument("--gradient_accumulation_steps", type=int, default=2)
+    ap.add_argument("--per_device_train_batch_size", type=int, default=8)
+    ap.add_argument("--per_device_eval_batch_size",  type=int, default=8)
+    ap.add_argument("--gradient_accumulation_steps", type=int, default=4)
 
     ap.add_argument("--num_train_epochs", type=int, default=3)
     ap.add_argument("--learning_rate", type=float, default=5e-5)
