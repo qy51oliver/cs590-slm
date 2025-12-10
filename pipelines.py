@@ -151,7 +151,7 @@ class FactualQAProcessor(ProcessLogic):
     def preprocess(self, items: List[Dict[str, Any]], tokenizer: PreTrainedTokenizerBase) -> List[str]:
         prompts: List[str] = []
         for it in items:
-            q = it.get("question") or it.get("query") or ""
+            q = it.get("question") or it.get("query") or it.get("prompt") or ""
             if self.few_shot <= 0:
                 messages = [{"role": "user", "content": f"Answer the question concisely.\nQuestion: {q}\nAnswer:"}]
                 prompts.append(apply_instruct_template(messages, tokenizer))
@@ -177,7 +177,7 @@ class ReasoningProcessor(ProcessLogic):
     def preprocess(self, items: List[Dict[str, Any]], tokenizer: PreTrainedTokenizerBase) -> List[str]:
         prompts: List[str] = []
         for it in items:
-            question = it.get("question", "")
+            question = it.get("question") or it.get("query") or  it.get("prompt") or ""
             content = (
                 "You will be given a multiple-choice question with options A–D.\n"
                 "Please reason and choose the correct answer **strictly as a single capital letter** (A, B, C, D). for the following question:\n"
@@ -322,12 +322,11 @@ class RouterPipeline(BasePipeline):
         return self.run_with_router(items, self._router, **gen_kwargs)
 
 
-
 def _text_for_router(item):
-    for k in ("question", "prompt", "query"):
-        if item.get(k):
+    for k in ("question", "prompt", "query", "instruction"):
+        if k in item and item[k] is not None:   # accept empty strings
             return str(item[k])
-    raise ValueError("Item missing text field: expected one of ['question','prompt','query'].")
+    return ""  # safe default instead of raising
 
 class OurPipeline:
     """
