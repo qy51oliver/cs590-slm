@@ -196,9 +196,7 @@ class InstructionFollowingProcessor(ProcessLogic):
     def preprocess(self, items: List[Dict[str, Any]], tokenizer: PreTrainedTokenizerBase) -> List[str]:
         texts = []
         for it in items:
-            txt = it.get("prompt")
-            if not txt:
-                txt = it.get("question") or it.get("query") or ""
+            txt = it.get("question") or it.get("query") or  it.get("prompt") or ""
             texts.append(str(txt))
         return [apply_instruct_template(t, tokenizer) for t in texts]
 
