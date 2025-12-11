@@ -1,0 +1,410 @@
+{
+  "hidden_factual_qa": {
+    "n": 1000,
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "per_run": [
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      }
+    ],
+    "aggregate": {
+      "eval_results_loose.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_correct": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_total": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_correct": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_total": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "n_prompts": {
+        "mean": 1000.0,
+        "std": 0.0
+      }
+    }
+  },
+  "hidden_reasoning": {
+    "n": 1000,
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "per_run": [
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 1000,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 1000,
+          "prompt_correct": 1000,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      }
+    ],
+    "aggregate": {
+      "eval_results_loose.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_correct": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_total": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_correct": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_total": {
+        "mean": 1000.0,
+        "std": 0.0
+      },
+      "n_prompts": {
+        "mean": 1000.0,
+        "std": 0.0
+      }
+    }
+  },
+  "hidden_instruction_following": {
+    "n": 737,
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "per_run": [
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 737,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 737,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      },
+      {
+        "task": "ifeval(pkg)",
+        "n_prompts": 737,
+        "eval_results_strict": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        },
+        "eval_results_loose": {
+          "prompt_accuracy": 1.0,
+          "instruction_accuracy": 0,
+          "category_accuracy": {},
+          "instruction_accuracy_by_type": {},
+          "prompt_total": 737,
+          "prompt_correct": 737,
+          "instruction_total": 0,
+          "instruction_correct": 0
+        }
+      }
+    ],
+    "aggregate": {
+      "eval_results_loose.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_correct": {
+        "mean": 737.0,
+        "std": 0.0
+      },
+      "eval_results_loose.prompt_total": {
+        "mean": 737.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_accuracy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_correct": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.instruction_total": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_correct": {
+        "mean": 737.0,
+        "std": 0.0
+      },
+      "eval_results_strict.prompt_total": {
+        "mean": 737.0,
+        "std": 0.0
+      },
+      "n_prompts": {
+        "mean": 737.0,
+        "std": 0.0
+      }
+    }
+  }
+}

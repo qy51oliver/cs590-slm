@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Tuple
 import torch
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from pipelines import RouterPipeline, BasePipeline, OurPipeline
+from pipelines_inference import RouterPipeline, BasePipeline, OurPipeline
 from score import score_from_rows
 from generate import generate_rows, _write_jsonl, _read_jsonl
 
@@ -118,10 +118,10 @@ def main():
                     help="Unload each expert after finishing its bucket to reduce VRAM.")
     
     ap.add_argument("--batch_size", type=int, default=512)
-    ap.add_argument("--max_new_tokens", type=int, default=512)
+    ap.add_argument("--max_new_tokens", type=int, default=763)  # BEST PARAM
     ap.add_argument("--do_sample", action="store_true", help="Enable sampling for stochastic runs (recommended)")
-    ap.add_argument("--temperature", type=float, default=0.7)
-    ap.add_argument("--top_p", type=float, default=0.95)
+    ap.add_argument("--temperature", type=float, default=0.43894076403615506)  # BEST PARAM
+    ap.add_argument("--top_p", type=float, default=0.6)  # BEST PARAM
 
     ap.add_argument("--seeds", type=str, default="1", help="Comma-separated seeds for repeated runs")
     ap.add_argument("--submit_hidden", action="store_true", help="Submit hidden data")
@@ -182,7 +182,7 @@ def main():
             seeds,
             batch_size=args.batch_size,
             max_new_tokens=args.max_new_tokens,
-            do_sample=bool(args.do_sample) or True,  # ensure stochasticity unless explicitly disabled by flag absence
+            do_sample=bool(args.do_sample) or True,
             temperature=args.temperature,
             top_p=args.top_p,
             data_size=args.data_size,
@@ -269,5 +269,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
