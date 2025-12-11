@@ -44,5 +44,6 @@ models/
 submissions/
 notebooks/
 submissions.zip
-
+submissions_hidden.zip
+*.sh
 download_hidden_eval_data.py
