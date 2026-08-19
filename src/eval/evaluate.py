@@ -3,12 +3,12 @@ import json
 import os
 from typing import Any, Dict, List
 
-from pipelines_inference import (
+from src.inference.pipeline import (
     RouterPipeline,
     OurPipeline,
 )
-from generate import generate_rows, _write_jsonl, _read_jsonl
-from score import score_from_rows
+from src.inference.generation import generate_rows, _write_jsonl, _read_jsonl
+from src.eval.scoring import score_from_rows
 
 
 def __default_data_file_for_task(task: str) -> str:

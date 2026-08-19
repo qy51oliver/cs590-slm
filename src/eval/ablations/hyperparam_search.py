@@ -11,9 +11,9 @@ from skopt import gp_minimize
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 
-from pipelines_inference import OurPipeline
-from generate import generate_rows, _read_jsonl
-from score import score_from_rows
+from src.inference.pipeline import OurPipeline
+from src.inference.generation import generate_rows, _read_jsonl
+from src.eval.scoring import score_from_rows
 
 
 # ------------------------- helpers -------------------------

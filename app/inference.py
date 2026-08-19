@@ -14,7 +14,7 @@ from typing import List
 
 from app.config import Settings
 from app.logging_config import get_logger
-from pipelines_inference import OurPipeline
+from src.inference.pipeline import OurPipeline
 
 logger = get_logger("app.inference")
 

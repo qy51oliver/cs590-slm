@@ -1,0 +1,5 @@
+# Extra dependencies for the ablation studies in src/eval/ablations/.
+# Only needed to re-run the Bayesian decoding-hyperparameter search.
+-r requirements.txt
+scikit-optimize>=0.10.0
+numpy>=1.26

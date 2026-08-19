@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from pipelines_inference import apply_instruct_template
+from src.inference.pipeline import apply_instruct_template
 
 QUESTION = """what year did the price is right first air?"""
 

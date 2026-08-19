@@ -36,11 +36,12 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Datasets, model weights, and run outputs (pulled/generated, not versioned)
-data/
-models/
-outputs/
-hidden_data/
+# Datasets, model weights, and run outputs (pulled/generated, not versioned).
+# Anchored to the repo root so they don't match the src/data/ package.
+/data/
+/models/
+/outputs/
+/hidden_data/
 *.jsonl
 # ...except small, checked-in fixtures
 !benchmarks/queries.jsonl

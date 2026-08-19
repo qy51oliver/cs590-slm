@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict, List
 import re
 
-from pipelines_qa_strategies import BaseFQAPipeline
+from src.eval.ablations.qa_strategy_pipelines import BaseFQAPipeline
 
 
 def _ensure_dir(path: str) -> None:

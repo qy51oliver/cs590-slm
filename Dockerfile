@@ -30,7 +30,7 @@ COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
 COPY app/ ./app/
-COPY pipelines_inference.py ./
+COPY src/ ./src/
 
 USER appuser
 EXPOSE 8000

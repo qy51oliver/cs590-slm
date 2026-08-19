@@ -10,7 +10,10 @@ models/
 outputs/
 hidden_data/
 ifeval/
-benchmarks/results/
+benchmarks/
+scripts/
+docs/
+requirements-dev.txt
 *.pdf
 *.zip
 *.jsonl

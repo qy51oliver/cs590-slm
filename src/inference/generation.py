@@ -4,7 +4,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Callable
 
-from pipelines_inference import (
+from src.inference.pipeline import (
     RouterPipeline,
     BasePipeline,
     OurPipeline,
