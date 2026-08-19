@@ -1,0 +1,9 @@
+# Minimal dependency set for the serving container (app/ only).
+# Torch is pulled CPU-only in the Dockerfile via the PyTorch CPU wheel index.
+torch>=2.8.0
+transformers>=4.55.4
+accelerate>=1.10.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0

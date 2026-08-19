@@ -4,9 +4,10 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Callable
 
-from pipelines import (
+from pipelines_inference import (
     RouterPipeline,
     BasePipeline,
+    OurPipeline,
 )
 
 
@@ -78,11 +79,11 @@ def main():
 
 
     args = ap.parse_args()
-    args.data_file = "data/arc_c_test.jsonl"
     items = _read_jsonl(args.data_file)
     items = items[: args.data_size if args.data_size > 0 else None]
 
-    pipeline = RouterPipeline(args.model)
+    # Full router-expert system (learned router + three task experts).
+    pipeline = OurPipeline()
 
 
     rows = generate_rows(

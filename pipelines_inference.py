@@ -48,6 +48,14 @@ class HFRouterClassifier:
     @torch.no_grad()
     def predict_routes(self, texts: List[str]) -> List[str]:
         # texts: list of raw prompts/questions for classification
+        return [route for route, _ in self.predict_routes_with_scores(texts)]
+
+    @torch.no_grad()
+    def predict_routes_with_scores(self, texts: List[str]) -> List[tuple]:
+        """
+        Like predict_routes, but also returns the softmax confidence of the
+        selected route. Returns a list of (route_key, confidence) tuples.
+        """
         encs: List[Dict[str, Any]] = []
         for t in texts:
             ids = self.tok(t.strip(), add_special_tokens=True, truncation=False)["input_ids"]
@@ -56,16 +64,19 @@ class HFRouterClassifier:
         batch = self.tok.pad(encs, padding=True, return_tensors="pt").to(self.model.device)
 
         logits = self.model(**batch).logits  # shape [B, 3]
-        pred_ids = logits.argmax(dim=-1).tolist()
+        probs = torch.softmax(logits, dim=-1)
+        confs, pred_ids = probs.max(dim=-1)
+        pred_ids = pred_ids.tolist()
+        confs = confs.tolist()
         # id2label exists from training; fallback assumes FQA/REAS/IF in order
         id2label = getattr(self.model.config, "id2label", {0: "FQA", 1: "REAS", 2: "IF"})
-        labels = [id2label[int(i)] for i in pred_ids]
-        routes: List[str] = []
-        for lab in labels:
+        results: List[tuple] = []
+        for i, conf in zip(pred_ids, confs):
+            lab = id2label[int(i)]
             if lab not in _LABEL2ROUTE:
                 raise ValueError(f"Router produced unknown label: {lab}")
-            routes.append(_LABEL2ROUTE[lab])
-        return routes
+            results.append((_LABEL2ROUTE[lab], float(conf)))
+        return results
 
 
 # ---------------- helpers ----------------

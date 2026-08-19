@@ -1,0 +1,32 @@
+services:
+  slm-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: router-expert-slm:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # Model ids (override to point at local paths or private checkpoints)
+      SLM_ROUTER_MODEL: oliveryql/gemma270m-sft-router
+      SLM_FQA_MODEL: oliveryql/gemma270m-sft-fqa
+      SLM_REASONING_MODEL: oliveryql/gemma270m-sft-reasoning
+      SLM_IF_MODEL: oliveryql/gemma270m-sft-if
+      # Serving behaviour
+      SLM_WARM_EXPERTS: "true"
+      SLM_REASONING_SC_K: "5"
+      SLM_MAX_NEW_TOKENS: "256"
+      SLM_GENERATION_TIMEOUT_S: "120"
+      SLM_LOG_JSON: "true"
+    volumes:
+      # Persist the Hugging Face cache so model weights are downloaded only once.
+      - hf-cache:/home/appuser/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 300s
+      retries: 3
+
+volumes:
+  hf-cache:

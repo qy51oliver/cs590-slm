@@ -1,0 +1,17 @@
+# Core research + inference stack (see pyproject.toml for the installable package)
+torch>=2.8.0
+transformers>=4.55.4
+datasets>=4.4.0
+accelerate>=1.10.0
+tqdm>=4.67.1
+
+# Serving layer (app/)
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# Retrieval (rag_smoke_test.py) and evaluation utilities
+rank-bm25>=0.2.2
+nltk>=3.8.1
+requests>=2.31.0

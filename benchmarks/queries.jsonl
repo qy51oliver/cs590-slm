@@ -1,0 +1,13 @@
+{"query": "What is the capital of France?", "expected_route": "factual_qa"}
+{"query": "In what year did the first man land on the moon?", "expected_route": "factual_qa"}
+{"query": "Who wrote the novel Pride and Prejudice?", "expected_route": "factual_qa"}
+{"query": "What is the chemical symbol for gold?", "expected_route": "factual_qa"}
+{"query": "Which planet is known as the Red Planet?", "expected_route": "factual_qa"}
+{"query": "Question: Which is a renewable source of energy?\n\nChoices:\nA) coal\nB) solar power\nC) natural gas\nD) petroleum", "expected_route": "reasoning"}
+{"query": "Question: What happens to most substances when they are heated?\n\nChoices:\nA) they expand\nB) they contract\nC) they vanish\nD) they freeze", "expected_route": "reasoning"}
+{"query": "Question: Which animal is a mammal?\n\nChoices:\nA) shark\nB) frog\nC) whale\nD) eagle", "expected_route": "reasoning"}
+{"query": "Question: A ball is dropped from a tall building. What causes it to speed up as it falls?\n\nChoices:\nA) gravity\nB) friction\nC) magnetism\nD) sound", "expected_route": "reasoning"}
+{"query": "Write a haiku about the ocean. It must have exactly three lines.", "expected_route": "instruction_following"}
+{"query": "List three benefits of regular exercise. Use exactly three bullet points.", "expected_route": "instruction_following"}
+{"query": "Write a short greeting that includes the word 'sunshine' at least twice.", "expected_route": "instruction_following"}
+{"query": "Explain what an API is in two sentences, all in lowercase.", "expected_route": "instruction_following"}
